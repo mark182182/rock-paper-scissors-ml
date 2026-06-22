@@ -1,0 +1,25 @@
+[project]
+name = "rock-paper-scissors-ml"
+version = "0.1.0"
+description = "rock paper scissors task"
+readme = "README.md"
+dependencies = []
+
+[dependency-groups]
+dev = ["ruff>=0.15.18"]
+
+[tool.ruff.lint]
+select = [
+    # pycodestyle
+    "E",
+    # Pyflakes
+    "F",
+    # pyupgrade
+    "UP",
+    # flake8-bugbear
+    "B",
+    # flake8-simplify
+    "SIM",
+    # isort
+    "I",
+]
