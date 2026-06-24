@@ -3,13 +3,17 @@ from RPS import player
 from RPS_game import abbey, kris, mrugesh, play, quincy, random_player
 from shared import Config
 
-print("-- Starting exploration --")
-play(player, quincy, 1000)
-play(player, random_player, 1000)
-play(player, abbey, 1000)
-play(player, kris, 1000)
-play(player, mrugesh, 1000)
-print("Done")
+# print("-- Starting exploration --")
+# play(player, random_player, 1000)
+# play(player, abbey, 1000)
+# play(player, kris, 1000)
+# play(player, random_player, 1000)
+# play(player, mrugesh, 1000)
+# play(player, abbey, 1000)
+# play(player, quincy, 1000)
+# print("Done")
+
+Config.SHOULD_READ_EXPLORATION_FROM_JSON = True
 
 Config.EXPLORATION_ENABLED = False
 
