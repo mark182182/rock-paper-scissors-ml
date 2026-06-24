@@ -4,7 +4,7 @@ class Config:
     """
 
     CURRENT_EXPLORATION_ITERATION: int = 0
-    IS_PREVIOUS_WIN: bool = False
+    IS_PREVIOUS_OPPONENT_WIN: bool = False
     DISCOUNT_FACTOR = 0.998
     # the learning rate and decay rate has to be aligned to the number of games played
     # currently set for 4000 games (1000 * 4 matches)
