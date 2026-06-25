@@ -132,7 +132,8 @@ def player(prev_play: str, opponent_history: list[str] = []):
 
             next_opponent_guess = pick_best_guess_from_q_table(last_three_merged)
 
-            winning_move = WINNING_MOVES[Config.LAST_GAME_OPPONENT_PLAY[-1]]
+            Config.IS_PREVIOUS_OPPONENT_WIN = False
+            winning_move = WINNING_MOVES[opponent_history[-1]]
             # if the player did not win the last time, then it was an opponent win
             if winning_move != Config.LAST_GAME_PLAYER_PLAY:
                 Config.IS_PREVIOUS_OPPONENT_WIN = True
@@ -142,7 +143,7 @@ def player(prev_play: str, opponent_history: list[str] = []):
             if Config.IS_PREVIOUS_OPPONENT_WIN:
                 current_reward = WIN_MOVE_REWARD
 
-            if Config.LAST_GAME_OPPONENT_PLAY[-1] == Config.LAST_GAME_PLAYER_PLAY:
+            if opponent_history[-1] == Config.LAST_GAME_PLAYER_PLAY:
                 current_reward = TIE_MOVE_REWARD
 
             optimal_future_value = Q_TABLE[last_three_merged][next_opponent_guess]
