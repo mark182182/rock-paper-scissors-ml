@@ -1,7 +1,6 @@
 # The example function below keeps track of the opponent's history and plays whatever the opponent played two plays ago. It is not a very good player so you will need to change the code to pass the challenge.
 
 
-# create all permutations of rock paper and scissors in a map and assign a zeroes for them, which will be updated later by the Q value
 import json
 import os
 import random
