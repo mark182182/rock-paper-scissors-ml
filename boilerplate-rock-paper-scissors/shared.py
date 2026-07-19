@@ -27,6 +27,6 @@ class Config:
     LAST_GAME_OPPONENT_PLAY: str | None = None
     LAST_GAME_PLAYER_PLAY: str | None = None
 
-    NUM_OF_ROUNDS: int = 0
+    NUM_OF_ROUNDS: int = 100
     PREVIOUS_OPPONENT: Callable | None = None
     CURRENT_OPPONENT: Callable

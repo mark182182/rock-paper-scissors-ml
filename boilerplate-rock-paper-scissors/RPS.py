@@ -209,10 +209,10 @@ def player(
 
             next_player_play = WINNING_MOVES[next_opponent_guess]
 
-            # if Config.LEARNING_RATE > 0.009:
-            #     Config.LEARNING_RATE -= 0.009
+            # if Config.EXPLORATION_RATE > 0.009:
+            #     Config.EXPLORATION_RATE -= 0.009
             # if len(opponent_history) == 4000:
-            #     logger.info(Config.LEARNING_RATE)
+            #     logger.info(f"EXPLORATION_RATE: Config.EXPLORATION_RATE")
         else:
             # we pick totally at random here, sice the opponent_history
             # does not have enough moves from which we can update the Q_TABLE
