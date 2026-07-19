@@ -18,9 +18,13 @@ Config.SHOULD_READ_EXPLORATION_FROM_JSON = True
 Config.EXPLORATION_ENABLED = False
 
 print("-- Starting exploitation --")
+print("Playing against Kris")
 play(player, kris, 1000)
+print("Playing against Mrugesh")
 play(player, mrugesh, 1000)
+print("Playing against Abbey")
 play(player, abbey, 1000)
+print("Playing against Quincy")
 play(player, quincy, 1000)
 
 # Uncomment line below to play interactively against a bot:
