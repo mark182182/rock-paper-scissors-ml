@@ -5,11 +5,15 @@
 
 
 import json
+import logging
 import os
 import random
+from logging import Logger
 from pathlib import Path
 
 from shared import Config
+
+logger: Logger = logging.getLogger(__name__)
 
 PROJECT_DIR: Path = Path(__file__).parent.absolute()
 
@@ -80,7 +84,7 @@ def pick_best_guess_from_q_table(three_moves: str):
 def load_or_remove_exploration_files():
     if Config.SHOULD_READ_EXPLORATION_FROM_JSON:
         if not Config.IS_EXPLORATION_READ_FROM_JSON:
-            print(
+            logger.info(
                 "No exploration and all Q values are 0, loading last exploration iteration from JSON"  # noqa
             )
             Config.IS_EXPLORATION_READ_FROM_JSON = True
@@ -96,7 +100,7 @@ def load_or_remove_exploration_files():
 
             assert file_with_max_time, "Expected to have at least 1 exploration file"
             path_to_exp_file: Path = EXPLORATION_DIR_PATH / file_with_max_time
-            print(f"Max exploration file is: {path_to_exp_file}")
+            logger.info(f"Max exploration file is: {path_to_exp_file}")
 
             exp_file_lines: list[str] = []
             with open(path_to_exp_file, encoding="UTF-8") as exp_file:
@@ -109,11 +113,14 @@ def load_or_remove_exploration_files():
     else:
         if not Config.IS_REMOVE_DONE:
             Config.IS_REMOVE_DONE = True
-            print("Removing exploration files")
+            logger.info("Removing exploration files")
             remove_all_exploration_files()
 
 
-def player(prev_play: str, opponent_history: list[str]):
+def player(
+    prev_play: str,
+    opponent_history: list[str] = [],  # noqa
+):
     load_or_remove_exploration_files()
 
     # prev_play == opponent's previous play! not the player's
@@ -130,7 +137,7 @@ def player(prev_play: str, opponent_history: list[str]):
         last_three_merged = "".join(last_three_moves)
 
     if prev_play == "":
-        print("foo")
+        logger.info("Changed to a different player")
 
     if Config.EXPLORATION_ENABLED:
         if last_three_merged and Config.LAST_GAME_OPPONENT_PLAY:
@@ -168,7 +175,7 @@ def player(prev_play: str, opponent_history: list[str]):
             # if Config.LEARNING_RATE > 0.009:
             #     Config.LEARNING_RATE -= 0.009
             # if len(opponent_history) == 4000:
-            #     print(Config.LEARNING_RATE)
+            #     logger.info(Config.LEARNING_RATE)
         else:
             # we pick totally at random here, sice the opponent_history
             # does not have enough moves from which we can update the Q_TABLE
