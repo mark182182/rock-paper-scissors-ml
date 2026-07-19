@@ -3,13 +3,14 @@
 # It is not a very good player so you will need to
 # change the code to pass the challenge.
 
-
+import copy
 import json
 import logging
 import os
 import random
 from logging import Logger
 from pathlib import Path
+from typing import Any
 
 from shared import Config
 
@@ -21,6 +22,10 @@ PROJECT_DIR: Path = Path(__file__).parent.absolute()
 EXPLORATION_DIR_NAME: str = "exploration_iterations"
 EXPLORATION_DIR_PATH: Path = PROJECT_DIR / Path(EXPLORATION_DIR_NAME)
 EXPLORATION_FILE_NAME: str = "it_{num}.json"
+
+STRATEGIES_DIR_NAME: str = "strategies"
+STRATEGIES_DIR_PATH: Path = PROJECT_DIR / Path(STRATEGIES_DIR_NAME)
+STRATEGIES_FILE_NAME: str = "{name}.json"
 
 WIN_MOVE_REWARD: float = 0.4
 TIE_MOVE_REWARD: float = 0.1
@@ -63,6 +68,7 @@ Q_TABLE: dict[str, dict[str, float]] = {
     "SSP": {"R": 0, "P": 0, "S": 0},
     "SSS": {"R": 0, "P": 0, "S": 0},
 }
+ORIGINAL_Q_TABLE = copy.deepcopy(Q_TABLE)
 
 
 def remove_all_exploration_files():
@@ -85,31 +91,36 @@ def load_or_remove_exploration_files():
     if Config.SHOULD_READ_EXPLORATION_FROM_JSON:
         if not Config.IS_EXPLORATION_READ_FROM_JSON:
             logger.info(
-                "No exploration and all Q values are 0, loading last exploration iteration from JSON"  # noqa
+                "No exploration and all Q values are 0, loading strategy from JSON"  # noqa
             )
             Config.IS_EXPLORATION_READ_FROM_JSON = True
 
-            all_exploration_files: list[str] = os.listdir(EXPLORATION_DIR_PATH)
-            file_with_max_time: str | None = None
-            max_exp_ctime: float = 0
-            for exp_file in all_exploration_files:
-                ctime_of_exp_file = os.path.getctime(EXPLORATION_DIR_PATH / exp_file)
-                if ctime_of_exp_file > max_exp_ctime:
-                    max_exp_ctime = ctime_of_exp_file
-                    file_with_max_time = exp_file
+            all_stretegy_files: list[str] = os.listdir(STRATEGIES_DIR_PATH)
+            current_opponent: str = Config.CURRENT_OPPONENT.__name__
 
-            assert file_with_max_time, "Expected to have at least 1 exploration file"
-            path_to_exp_file: Path = EXPLORATION_DIR_PATH / file_with_max_time
-            logger.info(f"Max exploration file is: {path_to_exp_file}")
+            strategy_file_against_opponent: Path | None = None
+            for strategy_file in all_stretegy_files:
+                if STRATEGIES_FILE_NAME.format(name=current_opponent) == strategy_file:
+                    strategy_file_against_opponent = STRATEGIES_DIR_PATH / Path(
+                        strategy_file
+                    )
+                    break
 
-            exp_file_lines: list[str] = []
-            with open(path_to_exp_file, encoding="UTF-8") as exp_file:
-                exp_file_lines.extend(exp_file.readlines())
+            if not strategy_file_against_opponent:
+                logger.info(
+                    f"""Expected strategy against {current_opponent},
+                    but got only {all_stretegy_files}"""
+                )
+                exit(1)
 
-            exp_file_jsonstr: str = "".join(exp_file_lines)
+            strat_file_lines: list[str] = []
+            with open(strategy_file_against_opponent, encoding="UTF-8") as strat_file:
+                strat_file_lines.extend(strat_file.readlines())
+
+            strat_file_jsonstr: str = "".join(strat_file_lines)
 
             global Q_TABLE
-            Q_TABLE = json.loads(exp_file_jsonstr)
+            Q_TABLE = json.loads(strat_file_jsonstr)
     else:
         if not Config.IS_REMOVE_DONE:
             Config.IS_REMOVE_DONE = True
@@ -117,11 +128,40 @@ def load_or_remove_exploration_files():
             remove_all_exploration_files()
 
 
+# used for debug purposes only
+def _load_exploration_file():
+    all_exploration_files: list[str] = os.listdir(EXPLORATION_DIR_PATH)
+    file_with_max_time: str | None = None
+    max_exp_ctime: float = 0
+    for exp_file in all_exploration_files:
+        ctime_of_exp_file = os.path.getctime(EXPLORATION_DIR_PATH / exp_file)
+        if ctime_of_exp_file > max_exp_ctime:
+            max_exp_ctime = ctime_of_exp_file
+            file_with_max_time = exp_file
+
+    assert file_with_max_time, "Expected to have at least 1 exploration file"
+    path_to_exp_file: Path = EXPLORATION_DIR_PATH / file_with_max_time
+    logger.info(f"Max exploration file is: {path_to_exp_file}")
+
+    exp_file_lines: list[str] = []
+    with open(path_to_exp_file, encoding="UTF-8") as exp_file:
+        exp_file_lines.extend(exp_file.readlines())
+
+    exp_file_jsonstr: str = "".join(exp_file_lines)
+
+    global Q_TABLE
+    Q_TABLE = json.loads(exp_file_jsonstr)
+
+
 def player(
     prev_play: str,
     opponent_history: list[str] = [],  # noqa
 ):
+    global Q_TABLE
     load_or_remove_exploration_files()
+
+    if Config.END_OF_CURRENT_EXPLORATION and prev_play == "":
+        logger.info(f"Prepared for opponent {Config.CURRENT_OPPONENT.__name__}")
 
     # prev_play == opponent's previous play! not the player's
     opponent_history.append(prev_play)
@@ -135,9 +175,6 @@ def player(
     if len(opponent_history) >= 3 and "" not in opponent_history[-3:]:
         last_three_moves = opponent_history[-3:]
         last_three_merged = "".join(last_three_moves)
-
-    if prev_play == "":
-        logger.info("Changed to a different player")
 
     if Config.EXPLORATION_ENABLED:
         if last_three_merged and Config.LAST_GAME_OPPONENT_PLAY:
@@ -195,22 +232,42 @@ def player(
             # we start explotation at random as noted above
             next_player_play = MOVES[random.randint(0, 2)]
 
-    if Config.EXPLORATION_ENABLED:
-        it_file_path: Path = EXPLORATION_DIR_PATH / Path(
-            EXPLORATION_FILE_NAME.format(num=Config.CURRENT_EXPLORATION_ITERATION)
-        )
-        with open(
-            it_file_path,
-            "x",
-            encoding="UTF-8",
-        ) as exp_file:
-            exp_file.write(json.dumps(Q_TABLE, indent=2))
-
-        # later we want to create a pandas DataFrame.from_dict
-        # from the last iteration that will be exploited and pretty print it as a table
-
     Config.CURRENT_EXPLORATION_ITERATION += 1
     Config.LAST_GAME_PLAYER_PLAY = next_player_play
     Config.LAST_GAME_OPPONENT_PLAY = last_three_merged
 
+    if Config.EXPLORATION_ENABLED:
+        it_file_path: Path = EXPLORATION_DIR_PATH / Path(
+            EXPLORATION_FILE_NAME.format(num=Config.CURRENT_EXPLORATION_ITERATION)
+        )
+        _write_json(it_file_path, Q_TABLE)
+
+        if (
+            Config.END_OF_CURRENT_EXPLORATION
+            and Config.CURRENT_EXPLORATION_ITERATION == Config.NUM_OF_ROUNDS
+        ):
+            logger.info(f"Final strategy for {Config.CURRENT_OPPONENT.__name__}")
+            strategy_path: Path = STRATEGIES_DIR_PATH / Path(
+                STRATEGIES_FILE_NAME.format(name=Config.CURRENT_OPPONENT.__name__)
+            )
+            # TODO: if the win rate is worse than before, don't write it out
+            _write_json(strategy_path, Q_TABLE)
+
+            logger.info("Resetting Q_TABLE for new player")
+            Q_TABLE = copy.deepcopy(ORIGINAL_Q_TABLE)
+
+        # later we want to create a pandas DataFrame.from_dict
+        # from the last iteration that will be exploited and pretty print it as a table
+
     return next_player_play
+
+
+def _write_json(output_path: Path, payload: Any):
+    output_path.unlink(True)
+
+    with open(
+        output_path,
+        "x",
+        encoding="UTF-8",
+    ) as output_json_file:
+        output_json_file.write(json.dumps(payload, indent=2))
