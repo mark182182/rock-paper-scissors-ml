@@ -1,4 +1,7 @@
-# The example function below keeps track of the opponent's history and plays whatever the opponent played two plays ago. It is not a very good player so you will need to change the code to pass the challenge.
+# The example function below keeps track of the opponent's history
+# and plays whatever the opponent played two plays ago.
+# It is not a very good player so you will need to
+# change the code to pass the challenge.
 
 
 import json
@@ -17,14 +20,16 @@ EXPLORATION_FILE_NAME: str = "it_{num}.json"
 
 WIN_MOVE_REWARD: float = 0.4
 TIE_MOVE_REWARD: float = 0.1
-# we don't want to set this a negative value, since we have to encourage playing/exploration
+# we don't want to set this a negative value,
+# since we have to encourage playing/exploration
 # to have better results in the future
 LOSE_MOVE_REWARD: float = 0.01
 
 
 MOVES: list[str] = ["R", "P", "S"]
 WINNING_MOVES: dict[str, str] = {"R": "P", "P": "S", "S": "R"}
-# stores the opponent's moves in a table which can be used for predicting the future value by storing the Q values
+# stores the opponent's moves in a table which can be used
+# for predicting the future value by storing the Q values
 Q_TABLE: dict[str, dict[str, float]] = {
     "RRR": {"R": 0, "P": 0, "S": 0},
     "RRP": {"R": 0, "P": 0, "S": 0},
@@ -76,7 +81,7 @@ def load_or_remove_exploration_files():
     if Config.SHOULD_READ_EXPLORATION_FROM_JSON:
         if not Config.IS_EXPLORATION_READ_FROM_JSON:
             print(
-                "No exploration and all Q values are 0, loading last exploration iteration from JSON"
+                "No exploration and all Q values are 0, loading last exploration iteration from JSON"  # noqa
             )
             Config.IS_EXPLORATION_READ_FROM_JSON = True
 
@@ -108,7 +113,7 @@ def load_or_remove_exploration_files():
             remove_all_exploration_files()
 
 
-def player(prev_play: str, opponent_history: list[str] = []):
+def player(prev_play: str, opponent_history: list[str]):
     load_or_remove_exploration_files()
 
     # prev_play == opponent's previous play! not the player's
@@ -118,10 +123,14 @@ def player(prev_play: str, opponent_history: list[str] = []):
     last_three_moves: list[str] | None = None
     last_three_merged: str | None = None
 
-    # the last three moves should only be empty when all rounds with a given bot ended and we change to a new bot
+    # the last three moves should only be empty when all rounds
+    # with a given bot ended and we change to a new bot
     if len(opponent_history) >= 3 and "" not in opponent_history[-3:]:
         last_three_moves = opponent_history[-3:]
         last_three_merged = "".join(last_three_moves)
+
+    if prev_play == "":
+        print("foo")
 
     if Config.EXPLORATION_ENABLED:
         if last_three_merged and Config.LAST_GAME_OPPONENT_PLAY:
@@ -147,7 +156,7 @@ def player(prev_play: str, opponent_history: list[str] = []):
 
             optimal_future_value = Q_TABLE[last_three_merged][next_opponent_guess]
 
-            # Q new will be: (1-LEARNING_RATE) * current_q_value + LEARNING_RATE * (reward + DISCOUNT_FACTOR * optimal_next_state_value)
+            # Q new will be: (1-LEARNING_RATE) * current_q_value + LEARNING_RATE * (reward + DISCOUNT_FACTOR * optimal_next_state_value) #noqa
             Q_TABLE[Config.LAST_GAME_OPPONENT_PLAY][opponent_history[-1]] = (
                 1 - Config.LEARNING_RATE
             ) * current_q_value + Config.LEARNING_RATE * (
@@ -161,12 +170,18 @@ def player(prev_play: str, opponent_history: list[str] = []):
             # if len(opponent_history) == 4000:
             #     print(Config.LEARNING_RATE)
         else:
-            # we pick totally at random here, sice the opponent_history does not have enough moves from which we can update the Q_TABLE
-            # we could utilize a 2 character (or second-order) Markov chain until we have the necessary values to update the third-order Markov chain in the Q_TABLE, but this would still be sufficient to defeat all opponents in the current game
+            # we pick totally at random here, sice the opponent_history
+            # does not have enough moves from which we can update the Q_TABLE
+            # we could utilize a 2 character (or second-order) Markov chain
+            # until we have the necessary values to update
+            # the third-order Markov chain in the Q_TABLE,
+            # but this would still be sufficient
+            # to defeat all opponents in the current game
             next_player_play = MOVES[random.randint(0, 2)]
     else:
         if last_three_merged and Config.LAST_GAME_OPPONENT_PLAY:
-            # this has to stay consistent with the exploration, since that is what the "learned" Q_TABLE stores
+            # this has to stay consistent with the exploration,
+            # since that is what the "learned" Q_TABLE stores
             next_opponent_guess = pick_best_guess_from_q_table(last_three_merged)
             next_player_play = WINNING_MOVES[next_opponent_guess]
         else:
@@ -184,7 +199,8 @@ def player(prev_play: str, opponent_history: list[str] = []):
         ) as exp_file:
             exp_file.write(json.dumps(Q_TABLE, indent=2))
 
-        # later we want to create a pandas DataFrame.from_dict from the last iteration that will be exploited and pretty print it as a table
+        # later we want to create a pandas DataFrame.from_dict
+        # from the last iteration that will be exploited and pretty print it as a table
 
     Config.CURRENT_EXPLORATION_ITERATION += 1
     Config.LAST_GAME_PLAYER_PLAY = next_player_play

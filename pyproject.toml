@@ -10,16 +10,22 @@ dev = ["ruff>=0.15.18"]
 
 [tool.ruff.lint]
 select = [
-    # pycodestyle
-    "E",
-    # Pyflakes
-    "F",
-    # pyupgrade
-    "UP",
-    # flake8-bugbear
-    "B",
-    # flake8-simplify
-    "SIM",
-    # isort
-    "I",
+  # pycodestyle
+  "E",
+  # Pyflakes
+  "F",
+  # pyupgrade
+  "UP",
+  # flake8-bugbear
+  "B",
+  # flake8-simplify
+  "SIM",
+  # isort
+  "I",
+]
+
+[tool.ruff]
+exclude = [
+  "./boilerplate-rock-paper-scissors/RPS_game.py",
+  "./boilerplate-rock-paper-scissors/test_module.py",
 ]

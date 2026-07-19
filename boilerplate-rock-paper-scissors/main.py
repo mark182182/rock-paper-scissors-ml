@@ -1,6 +1,6 @@
 # This entrypoint file to be used in development. Start by reading README.md
 from RPS import player
-from RPS_game import abbey, kris, mrugesh, play, quincy, random_player
+from RPS_game import abbey, kris, mrugesh, play, quincy
 from shared import Config
 
 # print("-- Starting exploration --")
