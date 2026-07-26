@@ -5,7 +5,7 @@ from collections.abc import Callable
 from logging import Logger
 
 from RPS import player
-from RPS_game import abbey, kris, mrugesh, play, quincy, random_player
+from RPS_game import abbey, kris, mrugesh, play, quincy, random_player, human
 from shared import Config
 
 logging.basicConfig(
@@ -31,17 +31,17 @@ learning_games_against_oppoinent: dict[Callable, int] = {
 # NOTE: this could be set on a game-by-game basis,
 # but currently all games are played for 1000 rounds
 
-logger.info("-- Starting exploration --")
-for opponent in learning_games_against_oppoinent:
-    Config.CURRENT_OPPONENT = opponent
-    logger.info(f"Playing against {opponent.__name__}")
-    Config.END_OF_CURRENT_EXPLORATION = True
-    Config.CURRENT_EXPLORATION_ITERATION = 0
-    num_of_rounds: int = learning_games_against_oppoinent[opponent]
-    Config.NUM_OF_ROUNDS = num_of_rounds
-    play(player, opponent, num_of_rounds)
-    Config.END_OF_CURRENT_EXPLORATION = False
-logger.info("Done")
+# logger.info("-- Starting exploration --")
+# for opponent in learning_games_against_oppoinent:
+#     Config.CURRENT_OPPONENT = opponent
+#     logger.info(f"Playing against {opponent.__name__}")
+#     Config.END_OF_CURRENT_EXPLORATION = True
+#     Config.CURRENT_EXPLORATION_ITERATION = 0
+#     num_of_rounds: int = learning_games_against_oppoinent[opponent]
+#     Config.NUM_OF_ROUNDS = num_of_rounds
+#     play(player, opponent, num_of_rounds)
+#     Config.END_OF_CURRENT_EXPLORATION = False
+# logger.info("Done")
 
 Config.SHOULD_READ_EXPLORATION_FROM_JSON = True
 

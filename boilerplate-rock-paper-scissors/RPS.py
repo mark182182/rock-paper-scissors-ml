@@ -190,10 +190,10 @@ def player(
             if winning_move != Config.LAST_GAME_PLAYER_PLAY:
                 Config.IS_PREVIOUS_OPPONENT_WIN = True
 
-            current_reward = LOSE_MOVE_REWARD
+            current_reward = WIN_MOVE_REWARD
 
             if Config.IS_PREVIOUS_OPPONENT_WIN:
-                current_reward = WIN_MOVE_REWARD
+                current_reward = LOSE_MOVE_REWARD
 
             if opponent_history[-1] == Config.LAST_GAME_PLAYER_PLAY:
                 current_reward = TIE_MOVE_REWARD
