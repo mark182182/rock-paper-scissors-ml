@@ -6,6 +6,7 @@ class Config:
     Members of this class may change over time.
     """
 
+    # TODO: provide descriptions for each property
     END_OF_CURRENT_EXPLORATION: bool = False
     CURRENT_EXPLORATION_ITERATION: int = 0
     IS_PREVIOUS_OPPONENT_WIN: bool = False

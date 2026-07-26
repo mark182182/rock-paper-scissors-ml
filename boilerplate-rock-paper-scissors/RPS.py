@@ -27,6 +27,8 @@ STRATEGIES_DIR_NAME: str = "strategies"
 STRATEGIES_DIR_PATH: Path = PROJECT_DIR / Path(STRATEGIES_DIR_NAME)
 STRATEGIES_FILE_NAME: str = "{name}.json"
 
+# TODO: provide descriptions for each property
+
 WIN_MOVE_REWARD: float = 0.4
 TIE_MOVE_REWARD: float = 0.1
 # we don't want to set this a negative value,
@@ -180,6 +182,13 @@ def player(
     # based on the exploration rate, when exploring the player should go down the Config.EXPLORATION_ENABLED case,
     # otherwise the player should pick from the currently exploited Q_TABLE (pick_best_guess_from_q_table, same as exploiting without learning)
     # the learning rate is not the same as the exploration rate
+
+    # TODO: plot the following in different graphs using matplotlib,
+    # both during exploration and exploitation (depending on the properties that exist during exploitation, e.g. learning rate does not):
+    # - how the exploration rate changes over time
+    # - how the Q_TABLE changes over time based on the rewards
+    # - how the player moves change over time
+    # - how the opponent moves change over time
     if Config.EXPLORATION_ENABLED:
         if last_three_merged and Config.LAST_GAME_OPPONENT_PLAY:
             current_q_value = Q_TABLE[Config.LAST_GAME_OPPONENT_PLAY][
@@ -213,10 +222,11 @@ def player(
 
             next_player_play = WINNING_MOVES[next_opponent_guess]
 
-            # if Config.EXPLORATION_RATE > 0.009:
-            #     Config.EXPLORATION_RATE -= 0.009
-            # if len(opponent_history) == 4000:
-            #     logger.info(f"EXPLORATION_RATE: Config.EXPLORATION_RATE")
+            # should never be smaller than the decay rate to always retain
+            # some amount of exploration
+            if Config.EXPLORATION_RATE > Config.EXPLORATION_RATE_DECAY_RATE:
+                Config.EXPLORATION_RATE -= Config.EXPLORATION_RATE_DECAY_RATE
+                logger.info(f"EXPLORATION_RATE: {Config.EXPLORATION_RATE}")
         else:
             # we pick totally at random here, sice the opponent_history
             # does not have enough moves from which we can update the Q_TABLE
