@@ -176,6 +176,10 @@ def player(
         last_three_moves = opponent_history[-3:]
         last_three_merged = "".join(last_three_moves)
 
+    # TODO: add exploration rate that decays over time
+    # based on the exploration rate, when exploring the player should go down the Config.EXPLORATION_ENABLED case,
+    # otherwise the player should pick from the currently exploited Q_TABLE (pick_best_guess_from_q_table, same as exploiting without learning)
+    # the learning rate is not the same as the exploration rate
     if Config.EXPLORATION_ENABLED:
         if last_three_merged and Config.LAST_GAME_OPPONENT_PLAY:
             current_q_value = Q_TABLE[Config.LAST_GAME_OPPONENT_PLAY][
@@ -185,9 +189,9 @@ def player(
             next_opponent_guess = pick_best_guess_from_q_table(last_three_merged)
 
             Config.IS_PREVIOUS_OPPONENT_WIN = False
-            winning_move = WINNING_MOVES[opponent_history[-1]]
+            previous_winning_move = WINNING_MOVES[opponent_history[-1]]
             # if the player did not win the last time, then it was an opponent win
-            if winning_move != Config.LAST_GAME_PLAYER_PLAY:
+            if previous_winning_move != Config.LAST_GAME_PLAYER_PLAY:
                 Config.IS_PREVIOUS_OPPONENT_WIN = True
 
             current_reward = WIN_MOVE_REWARD

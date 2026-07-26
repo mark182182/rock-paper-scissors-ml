@@ -9,11 +9,17 @@ class Config:
     END_OF_CURRENT_EXPLORATION: bool = False
     CURRENT_EXPLORATION_ITERATION: int = 0
     IS_PREVIOUS_OPPONENT_WIN: bool = False
-    DISCOUNT_FACTOR = 0.998
-    # the learning rate and decay rate has to be aligned to the number of games played
-    # currently set for 1000 games
-    LEARNING_RATE = 0.8
-    LEARNING_RATE_DECAY_RATE = 0.009
+    DISCOUNT_FACTOR: float = 0.998
+    # the learning rate is part of the Q function
+    LEARNING_RATE: float = 0.8
+    # the exploration rate adjusts the exploration vs exploitation aspect
+    # during exploration, and decays over time
+    # it handles how much moves the player should pick randomly,
+    # e.g. 70 in every 100 moves, so more at the start,
+    # then decays to near zero at the at end, but should not reach 0,
+    # since that way the player is not exploring anything during exploration
+    EXPLORATION_RATE: float = 0.7
+    EXPLORATION_RATE_DECAY_RATE: float = 0.009
 
     SHOULD_READ_EXPLORATION_FROM_JSON: bool = False
     IS_EXPLORATION_READ_FROM_JSON: bool = False
