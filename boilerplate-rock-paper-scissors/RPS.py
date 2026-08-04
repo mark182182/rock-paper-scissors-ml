@@ -181,6 +181,10 @@ def player(
     # TODO: add exploration rate that decays over time
     # based on the exploration rate, when exploring the player should go down the Config.EXPLORATION_ENABLED case,
     # otherwise the player should pick from the currently exploited Q_TABLE (pick_best_guess_from_q_table, same as exploiting without learning)
+
+    if Config.EXPLORATION_RATE > Config.EXPLORATION_RATE_DECAY_RATE:
+      # can pick random move here based on the current exploration rate that should decay linearly
+      pass
     # the learning rate is not the same as the exploration rate
 
     # TODO: plot the following in different graphs using matplotlib,
