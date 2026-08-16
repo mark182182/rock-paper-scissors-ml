@@ -8,6 +8,7 @@ class Config:
 
     # TODO: provide descriptions for each property
     END_OF_CURRENT_EXPLORATION: bool = False
+    CURRENT_GAME_ITERATION: int = 0
     CURRENT_EXPLORATION_ITERATION: int = 0
     IS_PREVIOUS_OPPONENT_WIN: bool = False
     DISCOUNT_FACTOR: float = 0.998
@@ -19,8 +20,9 @@ class Config:
     # e.g. 70 in every 100 moves, so more at the start,
     # then decays to near zero at the at end, but should not reach 0,
     # since that way the player is not exploring anything during exploration
-    EXPLORATION_RATE: float = 0.7
-    EXPLORATION_RATE_DECAY_RATE: float = 0.009
+    BASE_EXPLORATION_RATE: float = 0.78
+    CURRENT_EXPLORATION_RATE: float = BASE_EXPLORATION_RATE
+    EXPLORATION_RATE_DECAY_RATE: float = 0.008
 
     SHOULD_READ_EXPLORATION_FROM_JSON: bool = False
     IS_EXPLORATION_READ_FROM_JSON: bool = False

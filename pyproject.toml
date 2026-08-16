@@ -3,7 +3,9 @@ name = "rock-paper-scissors-ml"
 version = "0.1.0"
 description = "rock paper scissors task"
 readme = "README.md"
-dependencies = ["matplotlib>=3.11.1"]
+dependencies = [
+    "matplotlib==3.11.1",
+]
 
 [dependency-groups]
 dev = ["ruff>=0.15.18"]

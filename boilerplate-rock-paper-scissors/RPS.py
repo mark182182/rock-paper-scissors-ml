@@ -11,6 +11,7 @@ import random
 from logging import Logger
 from pathlib import Path
 from typing import Any
+from matplotlib.figure import Figure
 
 from shared import Config
 
@@ -26,6 +27,9 @@ EXPLORATION_FILE_NAME: str = "it_{num}.json"
 STRATEGIES_DIR_NAME: str = "strategies"
 STRATEGIES_DIR_PATH: Path = PROJECT_DIR / Path(STRATEGIES_DIR_NAME)
 STRATEGIES_FILE_NAME: str = "{name}.json"
+
+PLOTS_DIR_NAME: str = "plots"
+PLOTS_DIR_PATH: Path = PROJECT_DIR / Path(PLOTS_DIR_NAME)
 
 # TODO: provide descriptions for each property
 
@@ -72,13 +76,29 @@ Q_TABLE: dict[str, dict[str, float]] = {
 }
 ORIGINAL_Q_TABLE = copy.deepcopy(Q_TABLE)
 
+exploration_rate_plot_x: list[int] = []
+exploration_rate_plot_y: list[int] = []
 
-def remove_all_exploration_files():
+game_wins_plot_x: list[int] = []
+game_wins_plot_y: list[int] = []
+
+
+def _remove_all_exploration_files():
     for filename in os.listdir(EXPLORATION_DIR_PATH):
         os.remove(EXPLORATION_DIR_PATH / filename)
 
 
-def pick_best_guess_from_q_table(three_moves: str):
+def _create_plot(filename: str, plot_x: list, plot_y: list) -> None:
+    fig = Figure(figsize=(5, 4), dpi=120)
+
+    ax = fig.add_subplot()
+    ax.set_xlabel("Number of games")
+    ax.set_ylabel("Exploration")
+    ax.plot(plot_x, plot_y)
+    fig.savefig(PLOTS_DIR_PATH / Path(f"{filename}.png"))
+
+
+def _pick_best_guess_from_q_table(three_moves: str):
     """
     Gets the opponent's guess from the Q_TABLE based on the 3 moves (e.g. RRR)
     """
@@ -95,6 +115,8 @@ def load_or_remove_exploration_files():
             logger.info(
                 "No exploration and all Q values are 0, loading strategy from JSON"  # noqa
             )
+            Config.CURRENT_GAME_ITERATION = 0
+            Config.CURRENT_EXPLORATION_RATE = Config.BASE_EXPLORATION_RATE
             Config.IS_EXPLORATION_READ_FROM_JSON = True
 
             all_stretegy_files: list[str] = os.listdir(STRATEGIES_DIR_PATH)
@@ -127,7 +149,7 @@ def load_or_remove_exploration_files():
         if not Config.IS_REMOVE_DONE:
             Config.IS_REMOVE_DONE = True
             logger.info("Removing exploration files")
-            remove_all_exploration_files()
+            _remove_all_exploration_files()
 
 
 # used for debug purposes only
@@ -180,12 +202,7 @@ def player(
 
     # TODO: add exploration rate that decays over time
     # based on the exploration rate, when exploring the player should go down the Config.EXPLORATION_ENABLED case,
-    # otherwise the player should pick from the currently exploited Q_TABLE (pick_best_guess_from_q_table, same as exploiting without learning)
-
-    if Config.EXPLORATION_RATE > Config.EXPLORATION_RATE_DECAY_RATE:
-      # can pick random move here based on the current exploration rate that should decay linearly
-      pass
-    # the learning rate is not the same as the exploration rate
+    # otherwise the player should pick from the currently exploited Q_TABLE (_pick_best_guess_from_q_table, same as exploiting without learning)
 
     # TODO: plot the following in different graphs using matplotlib,
     # both during exploration and exploitation (depending on the properties that exist during exploitation, e.g. learning rate does not):
@@ -193,13 +210,19 @@ def player(
     # - how the Q_TABLE changes over time based on the rewards
     # - how the player moves change over time
     # - how the opponent moves change over time
-    if Config.EXPLORATION_ENABLED:
+    should_pick_randomly: bool = random.random() < Config.CURRENT_EXPLORATION_RATE
+
+    exploration_rate_plot_y.append(should_pick_randomly)
+
+    if should_pick_randomly:
+        next_player_play = MOVES[random.randint(0, 2)]
+    elif Config.EXPLORATION_ENABLED:
         if last_three_merged and Config.LAST_GAME_OPPONENT_PLAY:
             current_q_value = Q_TABLE[Config.LAST_GAME_OPPONENT_PLAY][
                 opponent_history[-1]
             ]
 
-            next_opponent_guess = pick_best_guess_from_q_table(last_three_merged)
+            next_opponent_guess = _pick_best_guess_from_q_table(last_three_merged)
 
             Config.IS_PREVIOUS_OPPONENT_WIN = False
             previous_winning_move = WINNING_MOVES[opponent_history[-1]]
@@ -228,9 +251,9 @@ def player(
 
             # should never be smaller than the decay rate to always retain
             # some amount of exploration
-            if Config.EXPLORATION_RATE > Config.EXPLORATION_RATE_DECAY_RATE:
-                Config.EXPLORATION_RATE -= Config.EXPLORATION_RATE_DECAY_RATE
-                logger.info(f"EXPLORATION_RATE: {Config.EXPLORATION_RATE}")
+            if Config.CURRENT_EXPLORATION_RATE > Config.EXPLORATION_RATE_DECAY_RATE:
+                Config.CURRENT_EXPLORATION_RATE -= Config.EXPLORATION_RATE_DECAY_RATE
+                logger.info(f"EXPLORATION_RATE: {Config.CURRENT_EXPLORATION_RATE}")
         else:
             # we pick totally at random here, sice the opponent_history
             # does not have enough moves from which we can update the Q_TABLE
@@ -244,12 +267,14 @@ def player(
         if last_three_merged and Config.LAST_GAME_OPPONENT_PLAY:
             # this has to stay consistent with the exploration,
             # since that is what the "learned" Q_TABLE stores
-            next_opponent_guess = pick_best_guess_from_q_table(last_three_merged)
+            next_opponent_guess = _pick_best_guess_from_q_table(last_three_merged)
             next_player_play = WINNING_MOVES[next_opponent_guess]
         else:
             # we start explotation at random as noted above
             next_player_play = MOVES[random.randint(0, 2)]
 
+    Config.CURRENT_GAME_ITERATION += 1
+    exploration_rate_plot_x.append(Config.CURRENT_GAME_ITERATION)
     Config.CURRENT_EXPLORATION_ITERATION += 1
     Config.LAST_GAME_PLAYER_PLAY = next_player_play
     Config.LAST_GAME_OPPONENT_PLAY = last_three_merged
@@ -273,6 +298,12 @@ def player(
 
             logger.info("Resetting Q_TABLE for new player")
             Q_TABLE = copy.deepcopy(ORIGINAL_Q_TABLE)
+
+            _create_plot(
+                Config.CURRENT_OPPONENT.__name__ + "_exploration_rate",
+                exploration_rate_plot_x,
+                exploration_rate_plot_y,
+            )
 
         # later we want to create a pandas DataFrame.from_dict
         # from the last iteration that will be exploited and pretty print it as a table
