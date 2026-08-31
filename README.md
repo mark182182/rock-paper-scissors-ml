@@ -31,4 +31,4 @@ This new solution
 Visual Studio Code was used as an editor with AI features disabled, see here:
 [.vscode/settings.json](.vscode/settings.json)
 
-No other AI tools were used.
+No other AI tools were used for code generation.

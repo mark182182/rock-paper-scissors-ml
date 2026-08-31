@@ -83,6 +83,7 @@ Q_TABLE: dict[str, dict[str, float]] = {
 ORIGINAL_Q_TABLE = copy.deepcopy(Q_TABLE)
 
 num_of_games_played_plot_x: list[int] = []
+exploration_played_plot_x: list[int] = []
 
 exploration_rate_plot_y: list[int] = []
 explorations_plot_y: list[int] = []
@@ -156,7 +157,7 @@ def _create_bar(filename: str, x_label: str, y_label: tuple, bar_x: list, xerror
     fig.savefig(PLOTS_DIR_PATH / Path(f"{filename}.png"))
 
 
-def _pick_best_guess_from_q_table(three_moves: str):
+def _pick_best_guess_from_q_table(three_moves: str) -> str:
     """
     Gets the opponent's guess from the Q_TABLE based on the 3 moves (e.g. RRR)
     """
@@ -190,6 +191,27 @@ def _get_current_reward_for_prev_play(opponent_history: list[str]) -> float:
             prev_it_reward_plot_y.append(WIN_MOVE_REWARD)
 
         return current_reward
+
+
+def _pick_guess_and_update_q_table(
+    opponent_history: list[str], last_three_merged: str
+) -> str:
+    current_q_value = Q_TABLE[Config.LAST_GAME_OPPONENT_PLAY][opponent_history[-1]]
+
+    next_opponent_guess: str = _pick_best_guess_from_q_table(last_three_merged)
+
+    current_reward: float = _get_current_reward_for_prev_play(opponent_history)
+
+    optimal_future_value = Q_TABLE[last_three_merged][next_opponent_guess]
+
+    # Q new will be: (1-LEARNING_RATE) * current_q_value + LEARNING_RATE * (reward + DISCOUNT_FACTOR * optimal_next_state_value) #noqa
+    Q_TABLE[Config.LAST_GAME_OPPONENT_PLAY][opponent_history[-1]] = (
+        1 - Config.LEARNING_RATE
+    ) * current_q_value + Config.LEARNING_RATE * (
+        current_reward + Config.DISCOUNT_FACTOR * optimal_future_value
+    )
+
+    return next_opponent_guess
 
 
 def _load_or_remove_exploration_files():
@@ -293,42 +315,19 @@ def player(
     # - how the Q_TABLE changes over time based on the rewards
     # - how the player moves change over time
     # - how the opponent moves change over time
-    should_pick_randomly: bool = random.random() < Config.CURRENT_EXPLORATION_RATE
 
-    exploration_rate_plot_y.append(Config.CURRENT_EXPLORATION_RATE)
-    explorations_plot_y.append(should_pick_randomly)
+    if (
+        Config.EXPLORATION_ENABLED
+        and last_three_merged
+        and Config.LAST_GAME_OPPONENT_PLAY
+    ):
+        should_pick_randomly: bool = random.random() < Config.CURRENT_EXPLORATION_RATE
 
-    if should_pick_randomly:
-        next_player_play = MOVES[random.randint(0, 2)]
-        # calling this just to record the previous play
-        _get_current_reward_for_prev_play(opponent_history)
-    elif Config.EXPLORATION_ENABLED:
-        if last_three_merged and Config.LAST_GAME_OPPONENT_PLAY:
-            current_q_value = Q_TABLE[Config.LAST_GAME_OPPONENT_PLAY][
-                opponent_history[-1]
-            ]
+        exploration_played_plot_x.append(Config.CURRENT_EXPLORATION_ITERATION)
+        exploration_rate_plot_y.append(Config.CURRENT_EXPLORATION_RATE)
+        explorations_plot_y.append(should_pick_randomly)
 
-            next_opponent_guess = _pick_best_guess_from_q_table(last_three_merged)
-
-            current_reward: float = _get_current_reward_for_prev_play(opponent_history)
-
-            optimal_future_value = Q_TABLE[last_three_merged][next_opponent_guess]
-
-            # Q new will be: (1-LEARNING_RATE) * current_q_value + LEARNING_RATE * (reward + DISCOUNT_FACTOR * optimal_next_state_value) #noqa
-            Q_TABLE[Config.LAST_GAME_OPPONENT_PLAY][opponent_history[-1]] = (
-                1 - Config.LEARNING_RATE
-            ) * current_q_value + Config.LEARNING_RATE * (
-                current_reward + Config.DISCOUNT_FACTOR * optimal_future_value
-            )
-
-            next_player_play = WINNING_MOVES[next_opponent_guess]
-
-            # should never be smaller than the decay rate to always retain
-            # some amount of exploration
-            if Config.CURRENT_EXPLORATION_RATE > Config.EXPLORATION_RATE_DECAY_RATE:
-                Config.CURRENT_EXPLORATION_RATE -= Config.EXPLORATION_RATE_DECAY_RATE
-                # logger.info(f"EXPLORATION_RATE: {Config.CURRENT_EXPLORATION_RATE}")
-        else:
+        if should_pick_randomly:
             # we pick totally at random here, sice the opponent_history
             # does not have enough moves from which we can update the Q_TABLE
             # we could utilize a 2 character (or second-order) Markov chain
@@ -338,7 +337,21 @@ def player(
             # to defeat all opponents in the current game
             next_player_play = MOVES[random.randint(0, 2)]
             # calling this just to record the previous play
-            _get_current_reward_for_prev_play(opponent_history)
+            _pick_guess_and_update_q_table(opponent_history, last_three_merged)
+        else:
+            next_opponent_guess = _pick_guess_and_update_q_table(
+                opponent_history, last_three_merged
+            )
+
+            next_player_play = WINNING_MOVES[next_opponent_guess]
+
+            # should never be smaller than the decay rate to always retain
+            # some amount of exploration
+            if Config.CURRENT_EXPLORATION_RATE > Config.EXPLORATION_RATE_DECAY_RATE:
+                Config.CURRENT_EXPLORATION_RATE -= Config.EXPLORATION_RATE_DECAY_RATE
+                # logger.info(f"EXPLORATION_RATE: {Config.CURRENT_EXPLORATION_RATE}")
+
+        Config.CURRENT_EXPLORATION_ITERATION += 1
     else:
         if last_three_merged and Config.LAST_GAME_OPPONENT_PLAY:
             # this has to stay consistent with the exploration,
@@ -353,7 +366,6 @@ def player(
 
     Config.CURRENT_GAME_ITERATION += 1
     num_of_games_played_plot_x.append(Config.CURRENT_GAME_ITERATION)
-    Config.CURRENT_EXPLORATION_ITERATION += 1
     Config.LAST_GAME_PLAYER_PLAY = next_player_play
     Config.LAST_GAME_OPPONENT_PLAY = last_three_merged
 
@@ -379,7 +391,7 @@ def player(
 
             _create_plot(
                 Config.CURRENT_OPPONENT.__name__ + "_exploration_rate",
-                num_of_games_played_plot_x,
+                exploration_played_plot_x,
                 "Number of games",
                 exploration_rate_plot_y,
                 "Exploration Rate",
@@ -387,7 +399,7 @@ def player(
 
             _create_scatter(
                 Config.CURRENT_OPPONENT.__name__ + "_explorations",
-                num_of_games_played_plot_x,
+                exploration_played_plot_x,
                 "Number of games",
                 explorations_plot_y,
                 "Is Exploring?",
