@@ -1,8 +1,3 @@
-# The example function below keeps track of the opponent's history
-# and plays whatever the opponent played two plays ago.
-# It is not a very good player so you will need to
-# change the code to pass the challenge.
-
 import copy
 import json
 import logging
@@ -49,7 +44,7 @@ LOSE_MOVE_REWARD: float = 0.01
 
 MOVES: list[str] = ["R", "P", "S"]
 WINNING_MOVES: dict[str, str] = {"R": "P", "P": "S", "S": "R"}
-# stores the opponent's moves in a table which can be used
+# stores the player's moves in a table which can be used
 # for predicting the future value by storing the Q values
 Q_TABLE: dict[str, dict[str, float]] = {
     "RRR": {"R": 0, "P": 0, "S": 0},
@@ -159,59 +154,76 @@ def _create_bar(filename: str, x_label: str, y_label: tuple, bar_x: list, xerror
 
 def _pick_best_guess_from_q_table(three_moves: str) -> str:
     """
-    Gets the opponent's guess from the Q_TABLE based on the 3 moves (e.g. RRR)
+    Gets the player's guess from the Q_TABLE based on the 3 moves (e.g. RRR)
     """
-    possible_gusses = Q_TABLE[three_moves]
+    possible_guesses: dict[str, float] = Q_TABLE[three_moves]
     # we need to get the guess with the greatest value
-    opponent_guess = max(possible_gusses, key=lambda key: possible_gusses[key])
+    player_guess: str = max(possible_guesses, key=lambda key: possible_guesses[key])
 
-    return opponent_guess
+    return player_guess
 
 
 def _get_current_reward_for_prev_play(opponent_history: list[str]) -> float:
-    if len(opponent_history) >= 0 and "" not in opponent_history[-1:]:
-        prev_iteration_plot_x.append(Config.CURRENT_GAME_ITERATION)
+    if (
+        len(opponent_history) == 0
+        or "" not in opponent_history[-1:]
+        or len(Config.PLAYER_HISTORY) == 0
+    ):
+        # this should be the first play against the opponet, so we give a fixed tie reward for start
+        return TIE_MOVE_REWARD
 
+    prev_iteration_plot_x.append(Config.CURRENT_GAME_ITERATION)
+    # TODO: continue rewriting the opponent Q-table logic from here to use the player's history instead
+
+    Config.IS_PREVIOUS_OPPONENT_WIN = False
+    previous_winning_move = WINNING_MOVES[Config.PLAYER_HISTORY[-1]]
+    # if the player did not win the last time, then it was an opponent win
+    if Config.PLAYER_HISTORY[-1] == opponent_history[-1:]:
+        # both played the same: tie
+        current_reward = TIE_MOVE_REWARD
+        prev_it_reward_plot_y.append(TIE_MOVE_REWARD)
+    elif previous_winning_move == opponent_history[-1:]:
+        # player did not play the winning hand: lose
+        Config.IS_PREVIOUS_OPPONENT_WIN = True
+        current_reward = LOSE_MOVE_REWARD
+        prev_it_reward_plot_y.append(LOSE_MOVE_REWARD)
+    else:
+        # player plyed the winning hand: win
         Config.IS_PREVIOUS_OPPONENT_WIN = False
-        previous_winning_move = WINNING_MOVES[opponent_history[-1]]
-        # if the player did not win the last time, then it was an opponent win
-        if opponent_history[-1] == Config.LAST_GAME_PLAYER_PLAY:
-            # both played the same: tie
-            current_reward = TIE_MOVE_REWARD
-            prev_it_reward_plot_y.append(TIE_MOVE_REWARD)
-        elif previous_winning_move != Config.LAST_GAME_PLAYER_PLAY:
-            # player did not play the winning hand: lose
-            Config.IS_PREVIOUS_OPPONENT_WIN = True
-            current_reward = LOSE_MOVE_REWARD
-            prev_it_reward_plot_y.append(LOSE_MOVE_REWARD)
-        else:
-            # player plyed the winning hand: win
-            Config.IS_PREVIOUS_OPPONENT_WIN = False
-            current_reward = WIN_MOVE_REWARD
-            prev_it_reward_plot_y.append(WIN_MOVE_REWARD)
+        current_reward = WIN_MOVE_REWARD
+        prev_it_reward_plot_y.append(WIN_MOVE_REWARD)
 
-        return current_reward
+    return current_reward
 
 
 def _pick_guess_and_update_q_table(
-    opponent_history: list[str], last_three_merged: str
+    opponent_history: list[str], last_three_player_moves_merged: str
 ) -> str:
-    current_q_value = Q_TABLE[Config.LAST_GAME_OPPONENT_PLAY][opponent_history[-1]]
+    assert len(opponent_history) >= 0 and "" not in opponent_history[-1:], (
+        "opponent_history must be greater than 0 for getting updating the Q-table"
+    )
+    if len(opponent_history) >= 0 and "" not in opponent_history[-1:]:
+        # this should be the first play against the opponet, so we guess randomly and don't update the Q-table
+        return MOVES[random.randint(0, 2)]
 
-    next_opponent_guess: str = _pick_best_guess_from_q_table(last_three_merged)
+    current_q_value = Q_TABLE[Config.LAST_GAME_PLAYER_PLAY][Config.PLAYER_HISTORY[-1]]
+
+    next_player_guess: str = _pick_best_guess_from_q_table(
+        last_three_player_moves_merged
+    )
 
     current_reward: float = _get_current_reward_for_prev_play(opponent_history)
 
-    optimal_future_value = Q_TABLE[last_three_merged][next_opponent_guess]
+    optimal_future_value = Q_TABLE[last_three_player_moves_merged][next_player_guess]
 
     # Q new will be: (1-LEARNING_RATE) * current_q_value + LEARNING_RATE * (reward + DISCOUNT_FACTOR * optimal_next_state_value) #noqa
-    Q_TABLE[Config.LAST_GAME_OPPONENT_PLAY][opponent_history[-1]] = (
+    Q_TABLE[Config.LAST_GAME_PLAYER_PLAY][Config.PLAYER_HISTORY[-1]] = (
         1 - Config.LEARNING_RATE
     ) * current_q_value + Config.LEARNING_RATE * (
         current_reward + Config.DISCOUNT_FACTOR * optimal_future_value
     )
 
-    return next_opponent_guess
+    return next_player_guess
 
 
 def _load_or_remove_exploration_files():
@@ -296,14 +308,21 @@ def player(
     opponent_history.append(prev_play)
     next_player_play: str | None = None
 
-    last_three_moves: list[str] | None = None
-    last_three_merged: str | None = None
+    last_three_player_moves: list[str] | None = None
+    last_three_player_moves_merged: str | None = None
+
+    last_three_opponent_moves: list[str] | None = None
+    last_three_opponent_moves_merged: str | None = None
 
     # the last three moves should only be empty when all rounds
     # with a given bot ended and we change to a new bot
+    if len(Config.PLAYER_HISTORY) >= 3 and "" not in Config.PLAYER_HISTORY[-3:]:
+        last_three_player_moves = Config.PLAYER_HISTORY[-3:]
+        last_three_player_moves_merged = "".join(last_three_player_moves)
+
     if len(opponent_history) >= 3 and "" not in opponent_history[-3:]:
-        last_three_moves = opponent_history[-3:]
-        last_three_merged = "".join(last_three_moves)
+        last_three_opponent_moves = opponent_history[-3:]
+        last_three_opponent_moves_merged = "".join(last_three_opponent_moves)
 
     # TODO: add exploration rate that decays over time
     # based on the exploration rate, when exploring the player should go down the Config.EXPLORATION_ENABLED case,
@@ -318,7 +337,7 @@ def player(
 
     if (
         Config.EXPLORATION_ENABLED
-        and last_three_merged
+        and last_three_player_moves_merged
         and Config.LAST_GAME_OPPONENT_PLAY
     ):
         should_pick_randomly: bool = random.random() < Config.CURRENT_EXPLORATION_RATE
@@ -337,13 +356,15 @@ def player(
             # to defeat all opponents in the current game
             next_player_play = MOVES[random.randint(0, 2)]
             # calling this just to record the previous play
-            _pick_guess_and_update_q_table(opponent_history, last_three_merged)
+            _pick_guess_and_update_q_table(
+                opponent_history, last_three_player_moves_merged
+            )
         else:
-            next_opponent_guess = _pick_guess_and_update_q_table(
-                opponent_history, last_three_merged
+            next_player_guess = _pick_guess_and_update_q_table(
+                opponent_history, last_three_player_moves_merged
             )
 
-            next_player_play = WINNING_MOVES[next_opponent_guess]
+            next_player_play = WINNING_MOVES[next_player_guess]
 
             # should never be smaller than the decay rate to always retain
             # some amount of exploration
@@ -353,11 +374,13 @@ def player(
 
         Config.CURRENT_EXPLORATION_ITERATION += 1
     else:
-        if last_three_merged and Config.LAST_GAME_OPPONENT_PLAY:
+        if last_three_player_moves_merged and Config.LAST_GAME_OPPONENT_PLAY:
             # this has to stay consistent with the exploration,
             # since that is what the "learned" Q_TABLE stores
-            next_opponent_guess = _pick_best_guess_from_q_table(last_three_merged)
-            next_player_play = WINNING_MOVES[next_opponent_guess]
+            next_player_guess = _pick_best_guess_from_q_table(
+                last_three_player_moves_merged
+            )
+            next_player_play = WINNING_MOVES[next_player_guess]
         else:
             # we start explotation at random as noted above
             next_player_play = MOVES[random.randint(0, 2)]
@@ -367,7 +390,7 @@ def player(
     Config.CURRENT_GAME_ITERATION += 1
     num_of_games_played_plot_x.append(Config.CURRENT_GAME_ITERATION)
     Config.LAST_GAME_PLAYER_PLAY = next_player_play
-    Config.LAST_GAME_OPPONENT_PLAY = last_three_merged
+    Config.LAST_GAME_OPPONENT_PLAY = last_three_opponent_moves_merged
 
     if Config.EXPLORATION_ENABLED:
         it_file_path: Path = EXPLORATION_DIR_PATH / Path(
@@ -428,6 +451,7 @@ def player(
         # later we want to create a pandas DataFrame.from_dict
         # from the last iteration that will be exploited and pretty print it as a table
 
+    Config.PLAYER_HISTORY.append(next_player_play)
     return next_player_play
 
 

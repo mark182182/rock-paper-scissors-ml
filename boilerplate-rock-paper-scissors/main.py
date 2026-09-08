@@ -36,6 +36,7 @@ logger.info("-- Starting exploration --")
 logger.info("----------------------------")
 for opponent in learning_games_against_oppoinent:
     Config.CURRENT_OPPONENT = opponent
+    Config.PLAYER_HISTORY = []
     logger.info(f"Playing against {opponent.__name__}")
     Config.END_OF_CURRENT_EXPLORATION = True
     Config.CURRENT_EXPLORATION_ITERATION = 0
@@ -54,6 +55,7 @@ logger.info("-- Starting exploitation --")
 logger.info("----------------------------")
 for opponent in opponents:
     Config.CURRENT_OPPONENT = opponent
+    Config.PLAYER_HISTORY = []
     Config.IS_EXPLORATION_READ_FROM_JSON = False
     logger.info(f"Playing against {opponent.__name__}")
     play(player, opponent, Config.NUM_OF_ROUNDS)

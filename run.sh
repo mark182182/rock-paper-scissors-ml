@@ -6,7 +6,7 @@ if ! [ -d .venv ]; then
     
 fi
 
-. .venv/bin/activate
+. .venv/Scripts/activate
 
 
 while getopts ":pt" option; do

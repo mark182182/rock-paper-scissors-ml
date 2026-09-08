@@ -7,6 +7,7 @@ class Config:
     """
 
     # TODO: provide descriptions for each property
+    PLAYER_HISTORY: list[str] = []
     END_OF_CURRENT_EXPLORATION: bool = False
     CURRENT_GAME_ITERATION: int = 0
     CURRENT_EXPLORATION_ITERATION: int = 0
