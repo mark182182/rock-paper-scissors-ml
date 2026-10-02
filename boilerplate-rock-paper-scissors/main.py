@@ -3,6 +3,7 @@ import logging
 import sys
 from collections.abc import Callable
 from logging import Logger
+from random import seed
 
 from RPS import player
 from RPS_game import abbey, kris, mrugesh, play, quincy, random_player
@@ -15,6 +16,8 @@ logging.basicConfig(
 )
 
 logger: Logger = logging.getLogger(__name__)
+
+seed(Config.RANDOM_SEED)
 
 opponents: list[Callable] = [kris, mrugesh, abbey, quincy, random_player]
 

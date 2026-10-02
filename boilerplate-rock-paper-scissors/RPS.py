@@ -46,34 +46,89 @@ MOVES: list[str] = ["R", "P", "S"]
 WINNING_MOVES: dict[str, str] = {"R": "P", "P": "S", "S": "R"}
 # stores the player's moves in a table which can be used
 # for predicting the future value by storing the Q values
+HISTORY_LENGTH: int = 4
 Q_TABLE: dict[str, dict[str, float]] = {
-    "RRR": {"R": 0, "P": 0, "S": 0},
-    "RRP": {"R": 0, "P": 0, "S": 0},
-    "RRS": {"R": 0, "P": 0, "S": 0},
-    "RPR": {"R": 0, "P": 0, "S": 0},
-    "RPP": {"R": 0, "P": 0, "S": 0},
-    "RPS": {"R": 0, "P": 0, "S": 0},
-    "RSR": {"R": 0, "P": 0, "S": 0},
-    "RSP": {"R": 0, "P": 0, "S": 0},
-    "RSS": {"R": 0, "P": 0, "S": 0},
-    "PRR": {"R": 0, "P": 0, "S": 0},
-    "PRP": {"R": 0, "P": 0, "S": 0},
-    "PRS": {"R": 0, "P": 0, "S": 0},
-    "PPR": {"R": 0, "P": 0, "S": 0},
-    "PPP": {"R": 0, "P": 0, "S": 0},
-    "PPS": {"R": 0, "P": 0, "S": 0},
-    "PSR": {"R": 0, "P": 0, "S": 0},
-    "PSP": {"R": 0, "P": 0, "S": 0},
-    "PSS": {"R": 0, "P": 0, "S": 0},
-    "SRR": {"R": 0, "P": 0, "S": 0},
-    "SRP": {"R": 0, "P": 0, "S": 0},
-    "SRS": {"R": 0, "P": 0, "S": 0},
-    "SPR": {"R": 0, "P": 0, "S": 0},
-    "SPP": {"R": 0, "P": 0, "S": 0},
-    "SPS": {"R": 0, "P": 0, "S": 0},
-    "SSR": {"R": 0, "P": 0, "S": 0},
-    "SSP": {"R": 0, "P": 0, "S": 0},
-    "SSS": {"R": 0, "P": 0, "S": 0},
+    "RRRR": {"R": 0, "P": 0, "S": 0},
+    "RRRP": {"R": 0, "P": 0, "S": 0},
+    "RRRS": {"R": 0, "P": 0, "S": 0},
+    "RRPR": {"R": 0, "P": 0, "S": 0},
+    "RRPP": {"R": 0, "P": 0, "S": 0},
+    "RRPS": {"R": 0, "P": 0, "S": 0},
+    "RRSR": {"R": 0, "P": 0, "S": 0},
+    "RRSP": {"R": 0, "P": 0, "S": 0},
+    "RRSS": {"R": 0, "P": 0, "S": 0},
+    "RPRR": {"R": 0, "P": 0, "S": 0},
+    "RPRP": {"R": 0, "P": 0, "S": 0},
+    "RPRS": {"R": 0, "P": 0, "S": 0},
+    "RPPR": {"R": 0, "P": 0, "S": 0},
+    "RPPP": {"R": 0, "P": 0, "S": 0},
+    "RPPS": {"R": 0, "P": 0, "S": 0},
+    "RPSR": {"R": 0, "P": 0, "S": 0},
+    "RPSP": {"R": 0, "P": 0, "S": 0},
+    "RPSS": {"R": 0, "P": 0, "S": 0},
+    "RSRR": {"R": 0, "P": 0, "S": 0},
+    "RSRP": {"R": 0, "P": 0, "S": 0},
+    "RSRS": {"R": 0, "P": 0, "S": 0},
+    "RSPR": {"R": 0, "P": 0, "S": 0},
+    "RSPP": {"R": 0, "P": 0, "S": 0},
+    "RSPS": {"R": 0, "P": 0, "S": 0},
+    "RSSR": {"R": 0, "P": 0, "S": 0},
+    "RSSP": {"R": 0, "P": 0, "S": 0},
+    "RSSS": {"R": 0, "P": 0, "S": 0},
+    "PRRR": {"R": 0, "P": 0, "S": 0},
+    "PRRP": {"R": 0, "P": 0, "S": 0},
+    "PRRS": {"R": 0, "P": 0, "S": 0},
+    "PRPR": {"R": 0, "P": 0, "S": 0},
+    "PRPP": {"R": 0, "P": 0, "S": 0},
+    "PRPS": {"R": 0, "P": 0, "S": 0},
+    "PRSR": {"R": 0, "P": 0, "S": 0},
+    "PRSP": {"R": 0, "P": 0, "S": 0},
+    "PRSS": {"R": 0, "P": 0, "S": 0},
+    "PPRR": {"R": 0, "P": 0, "S": 0},
+    "PPRP": {"R": 0, "P": 0, "S": 0},
+    "PPRS": {"R": 0, "P": 0, "S": 0},
+    "PPPR": {"R": 0, "P": 0, "S": 0},
+    "PPPP": {"R": 0, "P": 0, "S": 0},
+    "PPPS": {"R": 0, "P": 0, "S": 0},
+    "PPSR": {"R": 0, "P": 0, "S": 0},
+    "PPSP": {"R": 0, "P": 0, "S": 0},
+    "PPSS": {"R": 0, "P": 0, "S": 0},
+    "PSRR": {"R": 0, "P": 0, "S": 0},
+    "PSRP": {"R": 0, "P": 0, "S": 0},
+    "PSRS": {"R": 0, "P": 0, "S": 0},
+    "PSPR": {"R": 0, "P": 0, "S": 0},
+    "PSPP": {"R": 0, "P": 0, "S": 0},
+    "PSPS": {"R": 0, "P": 0, "S": 0},
+    "PSSR": {"R": 0, "P": 0, "S": 0},
+    "PSSP": {"R": 0, "P": 0, "S": 0},
+    "PSSS": {"R": 0, "P": 0, "S": 0},
+    "SRRR": {"R": 0, "P": 0, "S": 0},
+    "SRRP": {"R": 0, "P": 0, "S": 0},
+    "SRRS": {"R": 0, "P": 0, "S": 0},
+    "SRPR": {"R": 0, "P": 0, "S": 0},
+    "SRPP": {"R": 0, "P": 0, "S": 0},
+    "SRPS": {"R": 0, "P": 0, "S": 0},
+    "SRSR": {"R": 0, "P": 0, "S": 0},
+    "SRSP": {"R": 0, "P": 0, "S": 0},
+    "SRSS": {"R": 0, "P": 0, "S": 0},
+    "SPRR": {"R": 0, "P": 0, "S": 0},
+    "SPRP": {"R": 0, "P": 0, "S": 0},
+    "SPRS": {"R": 0, "P": 0, "S": 0},
+    "SPPR": {"R": 0, "P": 0, "S": 0},
+    "SPPP": {"R": 0, "P": 0, "S": 0},
+    "SPPS": {"R": 0, "P": 0, "S": 0},
+    "SPSR": {"R": 0, "P": 0, "S": 0},
+    "SPSP": {"R": 0, "P": 0, "S": 0},
+    "SPSS": {"R": 0, "P": 0, "S": 0},
+    "SSRR": {"R": 0, "P": 0, "S": 0},
+    "SSRP": {"R": 0, "P": 0, "S": 0},
+    "SSRS": {"R": 0, "P": 0, "S": 0},
+    "SSPR": {"R": 0, "P": 0, "S": 0},
+    "SSPP": {"R": 0, "P": 0, "S": 0},
+    "SSPS": {"R": 0, "P": 0, "S": 0},
+    "SSSR": {"R": 0, "P": 0, "S": 0},
+    "SSSP": {"R": 0, "P": 0, "S": 0},
+    "SSSS": {"R": 0, "P": 0, "S": 0},
 }
 ORIGINAL_Q_TABLE = copy.deepcopy(Q_TABLE)
 
@@ -152,11 +207,11 @@ def _create_bar(filename: str, x_label: str, y_label: tuple, bar_x: list, xerror
     fig.savefig(PLOTS_DIR_PATH / Path(f"{filename}.png"))
 
 
-def _pick_best_guess_from_q_table(three_moves: str) -> str:
+def _pick_best_guess_from_q_table(n_moves: str) -> str:
     """
-    Gets the player's guess from the Q_TABLE based on the 3 moves (e.g. RRR)
+    Gets the player's guess from the Q_TABLE based on the n moves (e.g. RRR)
     """
-    possible_guesses: dict[str, float] = Q_TABLE[three_moves]
+    possible_guesses: dict[str, float] = Q_TABLE[n_moves]
     # we need to get the guess with the greatest value
     player_guess: str = max(possible_guesses, key=lambda key: possible_guesses[key])
 
@@ -166,7 +221,7 @@ def _pick_best_guess_from_q_table(three_moves: str) -> str:
 def _get_current_reward_for_prev_play(opponent_history: list[str]) -> float:
     if (
         len(opponent_history) == 0
-        or "" not in opponent_history[-1:]
+        or "" in opponent_history[-1:]
         or len(Config.PLAYER_HISTORY) == 0
     ):
         # this should be the first play against the opponet, so we give a fixed tie reward for start
@@ -178,11 +233,11 @@ def _get_current_reward_for_prev_play(opponent_history: list[str]) -> float:
     Config.IS_PREVIOUS_OPPONENT_WIN = False
     previous_winning_move = WINNING_MOVES[Config.PLAYER_HISTORY[-1]]
     # if the player did not win the last time, then it was an opponent win
-    if Config.PLAYER_HISTORY[-1] == opponent_history[-1:]:
+    if Config.PLAYER_HISTORY[-1] == opponent_history[-1:][0]:
         # both played the same: tie
         current_reward = TIE_MOVE_REWARD
         prev_it_reward_plot_y.append(TIE_MOVE_REWARD)
-    elif previous_winning_move == opponent_history[-1:]:
+    elif previous_winning_move == opponent_history[-1:][0]:
         # player did not play the winning hand: lose
         Config.IS_PREVIOUS_OPPONENT_WIN = True
         current_reward = LOSE_MOVE_REWARD
@@ -197,27 +252,23 @@ def _get_current_reward_for_prev_play(opponent_history: list[str]) -> float:
 
 
 def _pick_guess_and_update_q_table(
-    opponent_history: list[str], last_three_player_moves_merged: str
+    opponent_history: list[str], last_n_player_moves_merged: str
 ) -> str:
-    assert len(opponent_history) >= 0 and "" not in opponent_history[-1:], (
-        "opponent_history must be greater than 0 for getting updating the Q-table"
-    )
-    if len(opponent_history) >= 0 and "" not in opponent_history[-1:]:
+    if len(opponent_history) <= 0 and "" not in opponent_history[-1:]:
         # this should be the first play against the opponet, so we guess randomly and don't update the Q-table
+        print(f"random picked {opponent_history[-1:]}")
         return MOVES[random.randint(0, 2)]
 
-    current_q_value = Q_TABLE[Config.LAST_GAME_PLAYER_PLAY][Config.PLAYER_HISTORY[-1]]
+    current_q_value = Q_TABLE[last_n_player_moves_merged][Config.PLAYER_HISTORY[-1]]
 
-    next_player_guess: str = _pick_best_guess_from_q_table(
-        last_three_player_moves_merged
-    )
+    next_player_guess: str = _pick_best_guess_from_q_table(last_n_player_moves_merged)
 
     current_reward: float = _get_current_reward_for_prev_play(opponent_history)
 
-    optimal_future_value = Q_TABLE[last_three_player_moves_merged][next_player_guess]
+    optimal_future_value = Q_TABLE[last_n_player_moves_merged][next_player_guess]
 
     # Q new will be: (1-LEARNING_RATE) * current_q_value + LEARNING_RATE * (reward + DISCOUNT_FACTOR * optimal_next_state_value) #noqa
-    Q_TABLE[Config.LAST_GAME_PLAYER_PLAY][Config.PLAYER_HISTORY[-1]] = (
+    Q_TABLE[last_n_player_moves_merged][Config.PLAYER_HISTORY[-1]] = (
         1 - Config.LEARNING_RATE
     ) * current_q_value + Config.LEARNING_RATE * (
         current_reward + Config.DISCOUNT_FACTOR * optimal_future_value
@@ -308,21 +359,27 @@ def player(
     opponent_history.append(prev_play)
     next_player_play: str | None = None
 
-    last_three_player_moves: list[str] | None = None
-    last_three_player_moves_merged: str | None = None
+    last_n_player_moves: list[str] | None = None
+    last_n_player_moves_merged: str | None = None
 
-    last_three_opponent_moves: list[str] | None = None
-    last_three_opponent_moves_merged: str | None = None
+    last_n_opponent_moves: list[str] | None = None
+    last_n_opponent_moves_merged: str | None = None
 
-    # the last three moves should only be empty when all rounds
+    # the last n moves should only be empty when all rounds
     # with a given bot ended and we change to a new bot
-    if len(Config.PLAYER_HISTORY) >= 3 and "" not in Config.PLAYER_HISTORY[-3:]:
-        last_three_player_moves = Config.PLAYER_HISTORY[-3:]
-        last_three_player_moves_merged = "".join(last_three_player_moves)
+    if (
+        len(Config.PLAYER_HISTORY) >= HISTORY_LENGTH
+        and "" not in Config.PLAYER_HISTORY[-HISTORY_LENGTH:]
+    ):
+        last_n_player_moves = Config.PLAYER_HISTORY[-HISTORY_LENGTH:]
+        last_n_player_moves_merged = "".join(last_n_player_moves)
 
-    if len(opponent_history) >= 3 and "" not in opponent_history[-3:]:
-        last_three_opponent_moves = opponent_history[-3:]
-        last_three_opponent_moves_merged = "".join(last_three_opponent_moves)
+    if (
+        len(opponent_history) >= HISTORY_LENGTH
+        and "" not in opponent_history[-HISTORY_LENGTH:]
+    ):
+        last_n_opponent_moves = opponent_history[-HISTORY_LENGTH:]
+        last_n_opponent_moves_merged = "".join(last_n_opponent_moves)
 
     # TODO: add exploration rate that decays over time
     # based on the exploration rate, when exploring the player should go down the Config.EXPLORATION_ENABLED case,
@@ -335,10 +392,13 @@ def player(
     # - how the player moves change over time
     # - how the opponent moves change over time
 
+    if Config.EXPLORATION_ENABLED:
+        Config.CURRENT_EXPLORATION_ITERATION += 1
+
     if (
         Config.EXPLORATION_ENABLED
-        and last_three_player_moves_merged
-        and Config.LAST_GAME_OPPONENT_PLAY
+        and last_n_player_moves_merged
+        and Config.LAST_N_GAME_OPPONENT_PLAY
     ):
         should_pick_randomly: bool = random.random() < Config.CURRENT_EXPLORATION_RATE
 
@@ -356,12 +416,10 @@ def player(
             # to defeat all opponents in the current game
             next_player_play = MOVES[random.randint(0, 2)]
             # calling this just to record the previous play
-            _pick_guess_and_update_q_table(
-                opponent_history, last_three_player_moves_merged
-            )
+            _pick_guess_and_update_q_table(opponent_history, last_n_player_moves_merged)
         else:
             next_player_guess = _pick_guess_and_update_q_table(
-                opponent_history, last_three_player_moves_merged
+                opponent_history, last_n_player_moves_merged
             )
 
             next_player_play = WINNING_MOVES[next_player_guess]
@@ -371,14 +429,12 @@ def player(
             if Config.CURRENT_EXPLORATION_RATE > Config.EXPLORATION_RATE_DECAY_RATE:
                 Config.CURRENT_EXPLORATION_RATE -= Config.EXPLORATION_RATE_DECAY_RATE
                 # logger.info(f"EXPLORATION_RATE: {Config.CURRENT_EXPLORATION_RATE}")
-
-        Config.CURRENT_EXPLORATION_ITERATION += 1
     else:
-        if last_three_player_moves_merged and Config.LAST_GAME_OPPONENT_PLAY:
+        if last_n_player_moves_merged and Config.LAST_N_GAME_OPPONENT_PLAY:
             # this has to stay consistent with the exploration,
             # since that is what the "learned" Q_TABLE stores
             next_player_guess = _pick_best_guess_from_q_table(
-                last_three_player_moves_merged
+                last_n_player_moves_merged
             )
             next_player_play = WINNING_MOVES[next_player_guess]
         else:
@@ -390,7 +446,8 @@ def player(
     Config.CURRENT_GAME_ITERATION += 1
     num_of_games_played_plot_x.append(Config.CURRENT_GAME_ITERATION)
     Config.LAST_GAME_PLAYER_PLAY = next_player_play
-    Config.LAST_GAME_OPPONENT_PLAY = last_three_opponent_moves_merged
+    Config.LAST_N_GAME_PLAYER_PLAY = last_n_player_moves_merged
+    Config.LAST_N_GAME_OPPONENT_PLAY = last_n_opponent_moves_merged
 
     if Config.EXPLORATION_ENABLED:
         it_file_path: Path = EXPLORATION_DIR_PATH / Path(

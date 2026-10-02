@@ -7,6 +7,7 @@ class Config:
     """
 
     # TODO: provide descriptions for each property
+    RANDOM_SEED: int = 1234
     PLAYER_HISTORY: list[str] = []
     END_OF_CURRENT_EXPLORATION: bool = False
     CURRENT_GAME_ITERATION: int = 0
@@ -28,14 +29,14 @@ class Config:
     SHOULD_READ_EXPLORATION_FROM_JSON: bool = False
     IS_EXPLORATION_READ_FROM_JSON: bool = False
     IS_REMOVE_DONE: bool = False
-    EXPLORATION_ENABLED: int = 1
+    EXPLORATION_ENABLED: bool = True
     """
     Controls the exploration and exploitation.
     """
 
-    # this is the the previous - 1 game
-    LAST_GAME_OPPONENT_PLAY: str | None = None
+    LAST_N_GAME_OPPONENT_PLAY: str | None = None
     LAST_GAME_PLAYER_PLAY: str | None = None
+    LAST_N_GAME_PLAYER_PLAY: str | None = None
 
     NUM_OF_ROUNDS: int = 100
     PREVIOUS_OPPONENT: Callable | None = None
